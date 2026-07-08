@@ -1,110 +1,4 @@
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.worksheet.datavalidation import DataValidation
-import os
-
-# 1. CREATE UPDATED EXCEL TEMPLATE
-wb = openpyxl.Workbook()
-
-# Setup Sheet 1: FORM INPUT
-ws_form = wb.active
-ws_form.title = "FORM INPUT"
-
-fields = [
-    "Customer ID (No HP/Username)",
-    "Nama Customer",
-    "Tipe Pengiriman (AIR/SEA/HC)",
-    "Nama Barang",
-    "Variasi",
-    "Link Order (Kosongkan jika Offline)",
-    "Harga Yuan",
-    "Jumlah",
-    "Rate",
-    "Fee Bawa / Biaya Kirim Cargo",
-    "Status Barang",
-    "Link Foto Bukti (URL)"
-]
-
-# Styling setup
-header_fill = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
-label_fill = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
-white_font = Font(color="FFFFFF", bold=True)
-bold_font = Font(bold=True)
-border = Border(left=Side(style='thin', color='CCCCCC'), 
-                right=Side(style='thin', color='CCCCCC'), 
-                top=Side(style='thin', color='CCCCCC'), 
-                bottom=Side(style='thin', color='CCCCCC'))
-
-# Title
-ws_form.cell(row=1, column=1, value="FORMULIR INPUT DATA PESANAN").font = Font(bold=True, size=14, color="333333")
-ws_form.merge_cells('A1:B1')
-ws_form.cell(row=1, column=1).alignment = Alignment(horizontal='center', vertical='center')
-ws_form.row_dimensions[1].height = 30
-
-# Apply Fields
-for i, field in enumerate(fields, start=2):
-    cell_label = ws_form.cell(row=i, column=1, value=field)
-    cell_label.font = bold_font
-    cell_label.fill = label_fill
-    cell_label.border = border
-    cell_label.alignment = Alignment(vertical='center')
-    
-    cell_input = ws_form.cell(row=i, column=2)
-    cell_input.border = border
-    cell_input.alignment = Alignment(vertical='center')
-    
-    if field == "Tipe Pengiriman (AIR/SEA/HC)":
-        cell_input.value = "AIR"  # Default
-    elif field == "Status Barang":
-        cell_input.value = "Belum Payment" # Default
-
-ws_form.column_dimensions['A'].width = 35
-ws_form.column_dimensions['B'].width = 45
-
-# Data Validation for Dropdowns
-dv_shipping = DataValidation(type="list", formula1='"AIR,SEA,HC"', allow_blank=True)
-ws_form.add_data_validation(dv_shipping)
-dv_shipping.add(ws_form['B4'])
-
-# UPDATED STATUS VALIDATION
-status_list = "Belum Payment,PROSES PEMBELIAN,PENGIRIMAN KE TITIPORT CHINA,SUDAH DITERIMA OLEH TITIPORT CHINA,SEDANG DIBAWA KE INDONESIA,SUDAH SAMPAI INDONESIA,DIKIRIM KE PENGIRIM"
-dv_status = DataValidation(type="list", formula1=f'"{status_list}"', allow_blank=True)
-ws_form.add_data_validation(dv_status)
-dv_status.add(ws_form['B12'])
-
-# Setup Sheet 2: DATABASE
-ws_db = wb.create_sheet(title="DATABASE")
-db_headers = [
-    "Timestamp", "Order ID", "Customer ID", "Customer Name", "Nama Barang",
-    "Variasi", "Link Order", "Harga Yuan", "Jumlah", "Rate", "Total Rupiah",
-    "Fee Cargo/HC", "Status Barang", "Link Foto Bukti"
-]
-
-for col_num, header in enumerate(db_headers, 1):
-    cell = ws_db.cell(row=1, column=col_num, value=header)
-    cell.font = white_font
-    cell.fill = header_fill
-    cell.alignment = Alignment(horizontal='center', vertical='center')
-    
-    # Adjust widths
-    if header in ["Timestamp", "Order ID", "Link Foto Bukti", "Link Order"]:
-        ws_db.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 25
-    elif header == "Nama Barang":
-        ws_db.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 30
-    elif header == "Status Barang":
-        ws_db.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 35
-    else:
-        ws_db.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 18
-
-ws_db.row_dimensions[1].height = 25
-ws_db.freeze_panes = "A2"
-
-excel_path = '/mnt/data/Template_Sistem_Jastip_Update.xlsx'
-wb.save(excel_path)
-
-
-# 2. CREATE UPDATED HTML TRACKING WEBSITE
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -311,7 +205,7 @@ html_content = """<!DOCTYPE html>
     </div>
 
     <script>
-        // GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+        // URL WEB APP SUDAH DIMASUKKAN
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxE751t6pwNmnieC_P-3mJiZp2PmDuBcunASgfiLGgHDLv6rVUuxVQzfXoNiGtQe-65/exec";
 
         async function trackOrder() {
@@ -337,7 +231,7 @@ html_content = """<!DOCTYPE html>
                     document.getElementById("resItem").innerText = data.nama_barang;
                     document.getElementById("resVar").innerText = data.variasi || "-";
                     
-                    // Set Status Badge Color Update
+                    // Set Status Badge Color
                     const statusElem = document.getElementById("resStatus");
                     statusElem.innerText = data.status;
                     let st = data.status.toLowerCase();
@@ -366,16 +260,10 @@ html_content = """<!DOCTYPE html>
                 }
             } catch (error) {
                 document.getElementById("loader").style.display = "none";
-                alert("Terjadi kesalahan koneksi atau URL Apps Script belum di-setup.");
+                alert("Terjadi kesalahan koneksi. Pastikan URL Apps Script benar dan memiliki akses 'Siapa saja'.");
                 console.error(error);
             }
         }
     </script>
 </body>
-</html>"""
-
-html_path = '/mnt/data/index_update.html'
-with open(html_path, 'w', encoding='utf-8') as f:
-    f.write(html_content)
-
-print("Files successfully generated.")
+</html>
