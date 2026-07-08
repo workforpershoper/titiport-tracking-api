@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Jastip System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2C3E50;
+            --secondary: #3498DB;
+            --bg: #F8F9FA;
+            --text: #333333;
+            --success: #27AE60;
+            --warning: #F39C12;
+            --danger: #E74C3C;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            color: var(--text);
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #E0E0E0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--secondary);
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #CCCCCC;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        .search-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-area input { flex: 1; }
+        .search-area button { width: auto; white-space: nowrap; }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        button:hover { background: #1A252F; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #1E7E34; }
+        .btn-warning { background: var(--warning); }
+        .btn-warning:hover { background: #D35400; }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Dashboard Admin Jastip</h2>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('input-section')"><i class="fas fa-plus"></i> Input Baru</button>
+            <button class="tab-btn" onclick="switchTab('edit-section')"><i class="fas fa-edit"></i> Edit / Revisi</button>
+        </div>
+
+        <div class="loader" id="globalLoader"><i class="fas fa-spinner fa-spin"></i> Memproses ke Google Sheets...</div>
+
+        <!-- SECTION 1: INPUT BARU -->
+        <div id="input-section" class="form-section active">
+            <form id="addForm" onsubmit="submitForm(event)">
+                <div class="form-group">
+                    <label>Customer ID (No HP/Username)</label>
+                    <input type="text" id="cust_id" required placeholder="Contoh: 081234567890">
+                </div>
+                <div class="form-group">
+                    <label>Nama Customer</label>
+                    <input type="text" id="cust_name" required placeholder="Contoh: Nini">
+                </div>
+                <div class="form-group">
+                    <label>Tipe Pengiriman</label>
+                    <select id="ship_method">
+                        <option value="AIR">AIR (Kargo Udara)</option>
+                        <option value="SEA">SEA (Kargo Laut)</option>
+                        <option value="HC">HC (Handcarry)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nama Barang</label>
+                    <input type="text" id="item_name" required placeholder="Contoh: Jepitan Lumba">
+                </div>
+                <div class="form-group">
+                    <label>Variasi</label>
+                    <input type="text" id="item_var" placeholder="Contoh: XL / Pink">
+                </div>
+                <div class="form-group">
+                    <label>Link Order (tb/pdd/1688)</label>
+                    <input type="url" id="order_link" placeholder="Kosongkan jika offline store">
+                </div>
+                <div class="form-group">
+                    <label>Harga Yuan</label>
+                    <input type="number" step="any" id="price_yuan" required placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Jumlah (Qty)</label>
+                    <input type="number" id="qty" required value="1">
+                </div>
+                <div class="form-group">
+                    <label>Rate</label>
+                    <input type="number" step="any" id="rate" required placeholder="Contoh: 2200">
+                </div>
+                <div class="form-group">
+                    <label>Fee Bawa / Biaya Kirim Cargo</label>
+                    <input type="number" id="fee" required placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Status Barang</label>
+                    <select id="status">
+                        <option value="Belum Payment">Belum Payment</option>
+                        <option value="PROSES PEMBELIAN">PROSES PEMBELIAN</option>
+                        <option value="PENGIRIMAN KE TITIPORT CHINA">PENGIRIMAN KE TITIPORT CHINA</option>
+                        <option value="SUDAH DITERIMA OLEH TITIPORT CHINA">SUDAH DITERIMA OLEH TITIPORT CHINA</option>
+                        <option value="SEDANG DIBAWA KE INDONESIA">SEDANG DIBAWA KE INDONESIA</option>
+                        <option value="SUDAH SAMPAI INDONESIA">SUDAH SAMPAI INDONESIA</option>
+                        <option value="DIKIRIM KE PENGIRIM">DIKIRIM KE PENGIRIM</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Foto Bukti (Ambil Langsung dari Galeri/Kamera HP)</label>
+                    <input type="file" id="photo_file" accept="image/*">
+                </div>
+                <button type="submit" class="btn-success">Simpan Data Baru</button>
+            </form>
+        </div>
+
+        <!-- SECTION 2: EDIT / REVISI -->
+        <div id="edit-section" class="form-section">
+            <div class="search-area">
+                <input type="text" id="search_order_id" placeholder="Masukkan Order ID (Contoh: TTAIR001)">
+                <button type="button" onclick="searchOrder()"><i class="fas fa-search"></i> Cari Data</button>
+            </div>
+            
+            <form id="editForm" onsubmit="updateForm(event)" style="display:none;">
+                <input type="hidden" id="edit_row_idx">
+                <div class="form-group">
+                    <label>Order ID (Tidak dapat diubah)</label>
+                    <input type="text" id="edit_order_id" readonly style="background:#EEEEEE;">
+                </div>
+                <div class="form-group">
+                    <label>Customer ID (No HP/Username)</label>
+                    <input type="text" id="edit_cust_id" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama Customer</label>
+                    <input type="text" id="edit_cust_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama Barang</label>
+                    <input type="text" id="edit_item_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Variasi</label>
+                    <input type="text" id="edit_item_var">
+                </div>
+                <div class="form-group">
+                    <label>Link Order (tb/pdd/1688)</label>
+                    <input type="url" id="edit_order_link">
+                </div>
+                <div class="form-group">
+                    <label>Harga Yuan</label>
+                    <input type="number" step="any" id="edit_price_yuan" required>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah (Qty)</label>
+                    <input type="number" id="edit_qty" required>
+                </div>
+                <div class="form-group">
+                    <label>Rate</label>
+                    <input type="number" step="any" id="edit_rate" required>
+                </div>
+                <div class="form-group">
+                    <label>Fee Bawa / Biaya Kirim Cargo</label>
+                    <input type="number" id="edit_fee" required>
+                </div>
+                <div class="form-group">
+                    <label>Status Barang</label>
+                    <select id="edit_status">
+                        <option value="Belum Payment">Belum Payment</option>
+                        <option value="PROSES PEMBELIAN">PROSES PEMBELIAN</option>
+                        <option value="PENGIRIMAN KE TITIPORT CHINA">PENGIRIMAN KE TITIPORT CHINA</option>
+                        <option value="SUDAH DITERIMA OLEH TITIPORT CHINA">SUDAH DITERIMA OLEH TITIPORT CHINA</option>
+                        <option value="SEDANG DIBAWA KE INDONESIA">SEDANG DIBAWA KE INDONESIA</option>
+                        <option value="SUDAH SAMPAI INDONESIA">SUDAH SAMPAI INDONESIA</option>
+                        <option value="DIKIRIM KE PENGIRIM">DIKIRIM KE PENGIRIM</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ganti/Tambah Foto Bukti Baru (Biarkan kosong jika tidak diubah)</label>
+                    <input type="file" id="edit_photo_file" accept="image/*">
+                </div>
+                <button type="submit" class="btn-warning">Simpan Perubahan / Revisi</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN URL WEB APP ANDA DI BAWAH INI
+        const SCRIPT_URL = "URL_WEB_APP_ANDA_DISINI";
+
+        function switchTab(sectionId) {
+            document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Helper untuk konversi File Gambar ke Base64 string
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                if(!file) resolve({data: "", name: ""});
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve({data: reader.result.split(',')[1], name: file.name});
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // ACTION 1: INPUT BARU
+        async function submitForm(e) {
+            e.preventDefault();
+            document.getElementById('globalLoader').style.display = 'block';
+            
+            const fileEl = document.getElementById('photo_file').files[0];
+            const fileData = await fileToBase64(fileEl);
+
+            const payload = {
+                action: "insert",
+                cust_id: document.getElementById('cust_id').value,
+                cust_name: document.getElementById('cust_name').value,
+                ship_method: document.getElementById('ship_method').value,
+                item_name: document.getElementById('item_name').value,
+                item_var: document.getElementById('item_var').value,
+                order_link: document.getElementById('order_link').value,
+                price_yuan: document.getElementById('price_yuan').value,
+                qty: document.getElementById('qty').value,
+                rate: document.getElementById('rate').value,
+                fee: document.getElementById('fee').value,
+                status: document.getElementById('status').value,
+                image_data: fileData.data,
+                image_name: fileData.name
+            };
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                const res = await response.json();
+                document.getElementById('globalLoader').style.display = 'none';
+                
+                if(res.success) {
+                    alert("Sukses! Data Berhasil Disimpan. Order ID: " + res.order_id);
+                    document.getElementById('addForm').reset();
+                } else {
+                    alert("Gagal menyimpan data.");
+                }
+            } catch(err) {
+                document.getElementById('globalLoader').style.display = 'none';
+                alert("Terjadi kesalahan sistem.");
+                console.error(err);
+            }
+        }
+
+        // ACTION 2: CARI ORDER UNTUK REVISI
+        async function searchOrder() {
+            const orderId = document.getElementById('search_order_id').value.trim().toUpperCase();
+            if(!orderId) { alert("Masukkan Order ID!"); return; }
+
+            document.getElementById('globalLoader').style.display = 'block';
+            document.getElementById('editForm').style.display = 'none';
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=get_detail&order_id=${orderId}`);
+                const res = await response.json();
+                document.getElementById('globalLoader').style.display = 'none';
+
+                if(res.found) {
+                    document.getElementById('edit_row_idx').value = res.row_idx;
+                    document.getElementById('edit_order_id').value = res.order_id;
+                    document.getElementById('edit_cust_id').value = res.cust_id;
+                    document.getElementById('edit_cust_name').value = res.customer_name;
+                    document.getElementById('edit_item_name').value = res.nama_barang;
+                    document.getElementById('edit_item_var').value = res.variasi;
+                    document.getElementById('edit_order_link').value = res.link_order;
+                    document.getElementById('edit_price_yuan').value = res.price_yuan;
+                    document.getElementById('edit_qty').value = res.qty;
+                    document.getElementById('edit_rate').value = res.rate;
+                    document.getElementById('edit_fee').value = res.fee;
+                    document.getElementById('edit_status').value = res.status;
+                    
+                    document.getElementById('editForm').style.display = 'block';
+                } else {
+                    alert("Order ID tidak ditemukan.");
+                }
+            } catch (err) {
+                document.getElementById('globalLoader').style.display = 'none';
+                alert("Gagal memuat data pencarian.");
+            }
+        }
+
+        // ACTION 3: UPDATE / SIMPAN REVISI
+        async function updateForm(e) {
+            e.preventDefault();
+            document.getElementById('globalLoader').style.display = 'block';
+
+            const fileEl = document.getElementById('edit_photo_file').files[0];
+            const fileData = await fileToBase64(fileEl);
+
+            const payload = {
+                action: "update",
+                row_idx: document.getElementById('edit_row_idx').value,
+                cust_id: document.getElementById('edit_cust_id').value,
+                cust_name: document.getElementById('edit_cust_name').value,
+                item_name: document.getElementById('edit_item_name').value,
+                item_var: document.getElementById('edit_item_var').value,
+                order_link: document.getElementById('edit_order_link').value,
+                price_yuan: document.getElementById('edit_price_yuan').value,
+                qty: document.getElementById('edit_qty').value,
+                rate: document.getElementById('edit_rate').value,
+                fee: document.getElementById('fee').value,
+                status: document.getElementById('edit_status').value,
+                image_data: fileData.data,
+                image_name: fileData.name
+            };
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                const res = await response.json();
+                document.getElementById('globalLoader').style.display = 'none';
+
+                if(res.success) {
+                    alert("Sukses! Perubahan/Revisi berhasil disimpan ke Sheets.");
+                    document.getElementById('editForm').style.display = 'none';
+                    document.getElementById('search_order_id').value = '';
+                } else {
+                    alert("Gagal memperbarui data.");
+                }
+            } catch(err) {
+                document.getElementById('globalLoader').style.display = 'none';
+                alert("Terjadi kesalahan saat menyimpan pembaruan.");
+            }
+        }
+    </script>
+</body>
+</html>
