@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lacak Pesanan Titiport</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1E3A8A;
+            --secondary: #3B82F6;
+            --bg: #F3F4F6;
+            --text: #1F2937;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #0EA5E9;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            color: var(--text);
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 40px 20px; 
+            margin: 0; 
+            min-height: 100vh;
+        }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: var(--primary); margin: 0; font-size: 28px; }
+        .header p { color: #6B7280; margin-top: 8px; font-size: 15px; }
+
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05); 
+            max-width: 550px; 
+            width: 100%; 
+            box-sizing: border-box;
+        }
+        
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box i { position: absolute; left: 15px; top: 15px; color: #9CA3AF; }
+        input { 
+            width: 100%; padding: 14px 14px 14px 45px; 
+            border: 1px solid #D1D5DB; border-radius: 8px; 
+            font-size: 16px; box-sizing: border-box; transition: all 0.3s;
+        }
+        input:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        button { 
+            background: var(--primary); color: white; border: none; 
+            padding: 14px; border-radius: 8px; cursor: pointer; 
+            width: 100%; font-size: 16px; font-weight: 600; transition: background 0.3s;
+        }
+        button:hover { background: #1E40AF; }
+
+        .loader { display: none; text-align: center; margin-top: 20px; color: #6B7280; font-weight: 600; }
+
+        #resultsContainer { margin-top: 25px; }
+        
+        .item-card {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            animation: fadeIn 0.4s ease-out;
+            position: relative;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .item-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #D1D5DB;
+        }
+
+        .item-title { font-size: 16px; font-weight: 700; color: var(--primary); margin: 0 0 4px 0; }
+        .item-subtitle { font-size: 13px; color: #6B7280; margin: 0; }
+
+        .status-badge { 
+            display: inline-block; padding: 6px 12px; 
+            border-radius: 20px; font-weight: bold; font-size: 11px; 
+            color: white; text-align: center; text-transform: uppercase;
+        }
+
+        .detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+        .detail-label { color: #6B7280; }
+        .detail-value { font-weight: 600; text-align: right; max-width: 65%; word-break: break-word;}
+
+        .photo-section { margin-top: 15px; text-align: center; }
+        .photo-section img { 
+            max-width: 100%; border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            border: 1px solid #E5E7EB;
+            max-height: 300px; object-fit: contain;
+        }
+        
+        .no-result { text-align: center; padding: 20px; color: var(--danger); font-weight: bold; display: none;}
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1><i class="fas fa-box-open"></i> Lacak Pesanan Titiport</h1>
+        <p>Masukkan Item Tracking ID, Order ID, atau Customer ID</p>
+    </div>
+
+    <div class="container">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="keyword" placeholder="Contoh: CUS001, ORD2607, atau TTHC001">
+        </div>
+        <button onclick="trackOrder()">Cari Pesanan</button>
+        
+        <div class="loader" id="loader"><i class="fas fa-spinner fa-spin"></i> Sedang mencari data...</div>
+        <div class="no-result" id="noResult">Data pesanan tidak ditemukan.</div>
+        
+        <div id="resultsContainer"></div>
+    </div>
+
+    <script>
+        // GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA YANG TERBARU
+        const SCRIPT_URL = "URL_WEB_APP_ANDA_DISINI";
+
+        function getStatusColor(status) {
+            let st = status.toLowerCase();
+            if (st.includes('masuk') || st.includes('belum') || st.includes('diterima')) return 'var(--danger)'; 
+            if (st.includes('pembelian') || st.includes('seller mengirim')) return 'var(--warning)';
+            if (st.includes('warehouse') || st.includes('batch') || st.includes('dikirim')) return 'var(--info)';
+            if (st.includes('tiba di indonesia') || st.includes('repack')) return 'var(--secondary)';
+            if (st.includes('alamat customer') || st.includes('pesanan diterima') || st.includes('selesai')) return 'var(--success)';
+            return '#9CA3AF'; // Default gray
+        }
+
+        async function trackOrder() {
+            const keyword = document.getElementById("keyword").value.trim().toUpperCase();
+            if (!keyword) {
+                alert("Harap masukkan ID pencarian!");
+                return;
+            }
+
+            document.getElementById("loader").style.display = "block";
+            document.getElementById("resultsContainer").innerHTML = "";
+            document.getElementById("noResult").style.display = "none";
+
+            try {
+                // Fetch data dari Google Sheets API (Apps Script)
+                const response = await fetch(`${SCRIPT_URL}?action=track&keyword=${encodeURIComponent(keyword)}`);
+                const res = await response.json();
+
+                document.getElementById("loader").style.display = "none";
+
+                if (res.found && res.data.length > 0) {
+                    let html = `<div style="margin-bottom: 15px; font-weight:bold; color:#4B5563;">Ditemukan ${res.data.length} barang untuk ID: ${keyword}</div>`;
+                    
+                    res.data.forEach(item => {
+                        let variasiText = item.variasi ? ` - ${item.variasi}` : '';
+                        let photoHtml = '';
+                        if (item.foto_url && item.foto_url.startsWith('http')) {
+                            photoHtml = `
+                            <div class="photo-section">
+                                <p class="detail-label" style="text-align: left; font-size:13px; margin-bottom: 8px;">Foto Bukti:</p>
+                                <img src="${item.foto_url}" alt="Foto Bukti Pesanan">
+                            </div>`;
+                        }
+
+                        html += `
+                        <div class="item-card">
+                            <div class="item-header">
+                                <div>
+                                    <h3 class="item-title">${item.nama_barang}</h3>
+                                    <p class="item-subtitle">Item ID: ${item.item_id} | Order ID: ${item.order_id}</p>
+                                </div>
+                                <span class="status-badge" style="background:${getStatusColor(item.status)}">${item.status}</span>
+                            </div>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">Qty & Variasi</span>
+                                <span class="detail-value">${item.qty} Pcs${variasiText}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Pengiriman</span>
+                                <span class="detail-value">${item.jenis_pengiriman}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Estimasi Tiba (ETA)</span>
+                                <span class="detail-value">${item.eta || '-'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Catatan</span>
+                                <span class="detail-value" style="color:var(--primary);">${item.catatan || '-'}</span>
+                            </div>
+                            
+                            ${photoHtml}
+                        </div>`;
+                    });
+                    
+                    document.getElementById("resultsContainer").innerHTML = html;
+                } else {
+                    document.getElementById("noResult").style.display = "block";
+                }
+            } catch (error) {
+                document.getElementById("loader").style.display = "none";
+                alert("Terjadi kesalahan koneksi. Pastikan URL Apps Script sudah benar.");
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
