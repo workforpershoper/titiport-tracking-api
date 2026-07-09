@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titiport OMS - Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1E3A8A;
+            --secondary: #3B82F6;
+            --bg: #F3F4F6;
+            --text: #1F2937;
+            --success: #10B981;
+            --warning: #F59E0B;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 20px; font-size: 22px; }
+        .tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #E5E7EB; }
+        .tab-btn { background: none; border: none; padding: 10px 15px; font-size: 15px; font-weight: 600; cursor: pointer; color: #6B7280; transition: all 0.3s; }
+        .tab-btn.active { color: var(--secondary); border-bottom: 3px solid var(--secondary); }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .form-group { flex: 1; margin-bottom: 15px; }
+        .form-row .form-group { margin-bottom: 0; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; color: #4B5563; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: var(--secondary); ring: 2px solid var(--secondary); }
+        .search-area { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-area input { flex: 1; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.3s; }
+        button:hover { background: #1E40AF; }
+        .btn-success { background: var(--success); } .btn-success:hover { background: #059669; }
+        .btn-warning { background: var(--warning); } .btn-warning:hover { background: #D97706; }
+        .loader { display: none; text-align: center; margin: 15px 0; font-weight: bold; color: #4B5563; font-size: 14px;}
+        .section-title { font-size: 14px; font-weight: bold; color: var(--primary); border-bottom: 1px solid #E5E7EB; padding-bottom: 5px; margin-bottom: 10px; margin-top: 10px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-boxes"></i> Titiport OMS Mobile</h2>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('input-section')"><i class="fas fa-plus-circle"></i> Input Item Baru</button>
+            <button class="tab-btn" onclick="switchTab('edit-section')"><i class="fas fa-edit"></i> Update / Revisi</button>
+        </div>
+        <div class="loader" id="globalLoader"><i class="fas fa-spinner fa-spin"></i> Memproses ke Database...</div>
+
+        <!-- SECTION 1: INPUT BARU -->
+        <div id="input-section" class="form-section active">
+            <form id="addForm" onsubmit="submitForm(event)">
+                <div class="section-title">Informasi Utama</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Item Tracking ID</label>
+                        <input type="text" id="item_id" placeholder="Cth: TTHC001 (Kosongkan utk Auto)">
+                    </div>
+                    <div class="form-group">
+                        <label>Order ID*</label>
+                        <input type="text" id="order_id" required placeholder="Cth: ORD001">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Customer ID*</label>
+                    <input type="text" id="cust_id" required placeholder="Cth: CUS001">
+                </div>
+
+                <div class="section-title">Detail Barang</div>
+                <div class="form-group">
+                    <label>Nama Barang*</label>
+                    <input type="text" id="item_name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Qty*</label><input type="number" id="qty" required value="1"></div>
+                    <div class="form-group"><label>Variasi</label><input type="text" id="variasi"></div>
+                </div>
+                <div class="form-group"><label>Link Produk</label><input type="url" id="link_produk"></div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Platform Sumber</label>
+                        <select id="platform">
+                            <option value="Taobao">Taobao</option>
+                            <option value="Pinduoduo">Pinduoduo</option>
+                            <option value="1688">1688</option>
+                            <option value="JD">JD</option>
+                            <option value="XHS">XHS</option>
+                            <option value="Offline Guangzhou">Offline Guangzhou</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Order</label>
+                        <select id="jenis_order"><option value="Titip Beli">Titip Beli</option><option value="Titip Bawa">Titip Bawa</option></select>
+                    </div>
+                </div>
+
+                <div class="section-title">Logistik & Status</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Jenis Pengiriman</label>
+                        <select id="jenis_pengiriman">
+                            <option value="Handcarry">Handcarry</option><option value="Cargo Udara">Cargo Udara</option><option value="Cargo Laut">Cargo Laut</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tujuan China</label>
+                        <select id="tujuan_china">
+                            <option value="Warehouse Shenzhen">Warehouse Shenzhen</option><option value="Hotel Guangzhou">Hotel Guangzhou</option><option value="Supplier Direct">Supplier Direct</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Status Order*</label>
+                    <select id="status_order">
+                        <option value="Pesanan Masuk">Pesanan Masuk</option>
+                        <option value="Pembayaran Diterima">Pembayaran Diterima</option>
+                        <option value="Proses Pembelian">Proses Pembelian</option>
+                        <option value="Seller Mengirim">Seller Mengirim</option>
+                        <option value="Barang Tiba di Warehouse">Barang Tiba di Warehouse</option>
+                        <option value="Menunggu Batch">Menunggu Batch</option>
+                        <option value="Barang Sedang Dikirim Menuju Indonesia">Barang Dikirim ke ID</option>
+                        <option value="Barang Tiba di Indonesia">Barang Tiba di ID</option>
+                        <option value="Proses Repack">Proses Repack</option>
+                        <option value="Pengiriman Menuju Alamat Customer">Dikirim ke Customer</option>
+                        <option value="Pesanan Diterima">Pesanan Diterima</option>
+                    </select>
+                </div>
+
+                <div class="section-title">Keuangan</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Harga Yuan</label><input type="number" step="any" id="harga_yuan" value="0"></div>
+                    <div class="form-group"><label>Rate Rupiah</label><input type="number" step="any" id="rate" value="0"></div>
+                </div>
+                <div class="form-group"><label>Harga Jual ke Customer (Rp)</label><input type="number" id="harga_jual" value="0"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Ongkos Bawa (Rp)</label><input type="number" id="ongkos_bawa" value="0"></div>
+                    <div class="form-group"><label>Ongkir Lokal (Rp)</label><input type="number" id="ongkir_lokal" value="0"></div>
+                </div>
+
+                <div class="section-title">Bukti & Dokumentasi</div>
+                <div class="form-group">
+                    <label>Link Foto Bukti (URL Drive/Sosmed)</label>
+                    <input type="url" id="photo_url" placeholder="Paste (Tempel) Tautan Gambar Disini">
+                </div>
+                <button type="submit" class="btn-success" style="margin-top:10px;"><i class="fas fa-save"></i> Simpan Data ke Sheets</button>
+            </form>
+        </div>
+
+        <!-- SECTION 2: EDIT / REVISI -->
+        <div id="edit-section" class="form-section">
+            <div class="search-area">
+                <input type="text" id="search_id" placeholder="Masukkan Item Tracking ID (Cth: TTHC001)">
+                <button type="button" onclick="searchItem()" style="width:120px;"><i class="fas fa-search"></i> Cari</button>
+            </div>
+            
+            <form id="editForm" onsubmit="updateForm(event)" style="display:none;">
+                <input type="hidden" id="edit_row_idx">
+                <div class="form-row">
+                    <div class="form-group"><label>Item Tracking ID</label><input type="text" id="edit_item_id" readonly style="background:#E5E7EB;"></div>
+                    <div class="form-group"><label>Order ID</label><input type="text" id="edit_order_id"></div>
+                </div>
+                <div class="form-group"><label>Customer ID</label><input type="text" id="edit_cust_id"></div>
+                <div class="form-group"><label>Nama Barang</label><input type="text" id="edit_item_name"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Qty</label><input type="number" id="edit_qty"></div>
+                    <div class="form-group"><label>Variasi</label><input type="text" id="edit_variasi"></div>
+                </div>
+                <div class="form-group">
+                    <label>Status Order (Update Status)</label>
+                    <select id="edit_status_order">
+                        <option value="Pesanan Masuk">Pesanan Masuk</option>
+                        <option value="Pembayaran Diterima">Pembayaran Diterima</option>
+                        <option value="Proses Pembelian">Proses Pembelian</option>
+                        <option value="Seller Mengirim">Seller Mengirim</option>
+                        <option value="Barang Tiba di Warehouse">Barang Tiba di Warehouse</option>
+                        <option value="Menunggu Batch">Menunggu Batch</option>
+                        <option value="Barang Sedang Dikirim Menuju Indonesia">Barang Dikirim ke ID</option>
+                        <option value="Barang Tiba di Indonesia">Barang Tiba di ID</option>
+                        <option value="Proses Repack">Proses Repack</option>
+                        <option value="Pengiriman Menuju Alamat Customer">Dikirim ke Customer</option>
+                        <option value="Pesanan Diterima">Pesanan Diterima</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Link Foto Bukti Saat Ini</label>
+                    <input type="url" id="edit_photo_url" placeholder="Paste link foto baru disini">
+                </div>
+                <button type="submit" class="btn-warning"><i class="fas fa-sync-alt"></i> Simpan Revisi / Status</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "URL_WEB_APP_ANDA_DISINI";
+
+        function switchTab(sectionId) {
+            document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function submitForm(e) {
+            e.preventDefault();
+            document.getElementById('globalLoader').style.display = 'block';
+
+            const payload = {
+                action: "insert",
+                item_id: document.getElementById('item_id').value,
+                order_id: document.getElementById('order_id').value,
+                cust_id: document.getElementById('cust_id').value,
+                item_name: document.getElementById('item_name').value,
+                qty: document.getElementById('qty').value,
+                variasi: document.getElementById('variasi').value,
+                link_produk: document.getElementById('link_produk').value,
+                platform: document.getElementById('platform').value,
+                jenis_order: document.getElementById('jenis_order').value,
+                jenis_pengiriman: document.getElementById('jenis_pengiriman').value,
+                tujuan_china: document.getElementById('tujuan_china').value,
+                status_order: document.getElementById('status_order').value,
+                harga_yuan: document.getElementById('harga_yuan').value,
+                rate: document.getElementById('rate').value,
+                harga_jual: document.getElementById('harga_jual').value,
+                ongkos_bawa: document.getElementById('ongkos_bawa').value,
+                ongkir_lokal: document.getElementById('ongkir_lokal').value,
+                image_url: document.getElementById('photo_url').value // Menggunakan URL Link
+            };
+
+            try {
+                const response = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+                const res = await response.json();
+                document.getElementById('globalLoader').style.display = 'none';
+                if(res.success) {
+                    alert("Data Berhasil Disimpan! Tracking ID: " + res.item_id);
+                    document.getElementById('addForm').reset();
+                } else alert("Gagal menyimpan data.");
+            } catch(err) {
+                document.getElementById('globalLoader').style.display = 'none';
+                alert("Terjadi kesalahan sistem.");
+            }
+        }
+
+        async function searchItem() {
+            const trackId = document.getElementById('search_id').value.trim().toUpperCase();
+            if(!trackId) return alert("Masukkan Item Tracking ID!");
+            document.getElementById('globalLoader').style.display = 'block';
+            document.getElementById('editForm').style.display = 'none';
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=get_detail&item_id=${trackId}`);
+                const res = await response.json();
+                document.getElementById('globalLoader').style.display = 'none';
+                if(res.found) {
+                    document.getElementById('edit_row_idx').value = res.row_idx;
+                    document.getElementById('edit_item_id').value = res.item_id;
+                    document.getElementById('edit_order_id').value = res.order_id;
+                    document.getElementById('edit_cust_id').value = res.cust_id;
+                    document.getElementById('edit_item_name').value = res.item_name;
+                    document.getElementById('edit_qty').value = res.qty;
+                    document.getElementById('edit_variasi').value = res.variasi;
+                    document.getElementById('edit_status_order').value = res.status;
+                    document.getElementById('edit_photo_url').value = res.foto_url || ''; // Memunculkan URL Foto lama jika ada
+                    document.getElementById('editForm').style.display = 'block';
+                } else alert("Tracking ID tidak ditemukan.");
+            } catch (err) {
+                document.getElementById('globalLoader').style.display = 'none';
+                alert("Gagal memuat data pencarian.");
+            }
+        }
+
+        async function updateForm(e) {
+            e.preventDefault();
+            document.getElementById('globalLoader').style.display = 'block';
+
+            const payload = {
+                action: "update",
+                row_idx: document.getElementById('edit_row_idx').value,
+                order_id: document.getElementById('edit_order_id').value,
+                cust_id: document.getElementById('edit_cust_id').value,
+                item_name: document.getElementById('edit_item_name').value,
+                qty: document.getElementById('edit_qty').value,
+                variasi: document.getElementById('edit_variasi').value,
+                status_order: document.getElementById('edit_status_order').value,
+                image_url: document.getElementById('edit_photo_url').value // Menggunakan URL Link
+            };
+
+            try {
+                const response = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+                const res = await response.json();
+                document.getElementById('globalLoader').style.display = 'none';
+                if(res.success) {
+                    alert("Sukses! Perubahan disimpan.");
+                    document.getElementById('editForm').style.display = 'none';
+                } else alert("Gagal memperbarui data.");
+            } catch(err) {
+                document.getElementById('globalLoader').style.display = 'none';
+                alert("Terjadi kesalahan.");
+            }
+        }
+    </script>
+</body>
+</html>
