@@ -27,7 +27,7 @@
         .form-row .form-group { margin-bottom: 0; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; color: #4B5563; }
         input, select { width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        input:focus, select:focus { outline: none; border-color: var(--secondary); ring: 2px solid var(--secondary); }
+        input:focus, select:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
         .search-area { display: flex; gap: 10px; margin-bottom: 20px; }
         .search-area input { flex: 1; }
         button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.3s; }
@@ -192,6 +192,7 @@
     </div>
 
     <script>
+        // MASUKKAN URL WEB APP ANDA DI ANTARA TANDA KUTIP DI BAWAH INI
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztkVKDw43_iiFy2L4mBptHdaQSCVv66EyapyZQknrMPsR0hlCimLodqPC8p3j5Wr64/exec";
 
         function switchTab(sectionId) {
@@ -224,7 +225,7 @@
                 harga_jual: document.getElementById('harga_jual').value,
                 ongkos_bawa: document.getElementById('ongkos_bawa').value,
                 ongkir_lokal: document.getElementById('ongkir_lokal').value,
-                image_url: document.getElementById('photo_url').value // Menggunakan URL Link
+                image_url: document.getElementById('photo_url').value
             };
 
             try {
@@ -260,7 +261,7 @@
                     document.getElementById('edit_qty').value = res.qty;
                     document.getElementById('edit_variasi').value = res.variasi;
                     document.getElementById('edit_status_order').value = res.status;
-                    document.getElementById('edit_photo_url').value = res.foto_url || ''; // Memunculkan URL Foto lama jika ada
+                    document.getElementById('edit_photo_url').value = res.foto_url || ''; 
                     document.getElementById('editForm').style.display = 'block';
                 } else alert("Tracking ID tidak ditemukan.");
             } catch (err) {
@@ -282,7 +283,7 @@
                 qty: document.getElementById('edit_qty').value,
                 variasi: document.getElementById('edit_variasi').value,
                 status_order: document.getElementById('edit_status_order').value,
-                image_url: document.getElementById('edit_photo_url').value // Menggunakan URL Link
+                image_url: document.getElementById('edit_photo_url').value
             };
 
             try {
